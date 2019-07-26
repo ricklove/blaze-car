@@ -1,6 +1,7 @@
 #include "run.h"
 #include <simple2d.h>
 #include <math.h>
+#include <stdbool.h>
 #include "draw_pixels.h"
 #include "image_data.h"
 
@@ -15,7 +16,8 @@ static void drawLine(float x1, float y1, float x2, float y2, char r_255, char g_
 
 static S2D_Text *info;
 
-static int frame = 0;
+static int _frame = 0;
+static bool _pause = false;
 static BYTE *rawImageData;
 static BYTE *pixels_a;
 static BYTE *pixels_b;
@@ -68,7 +70,7 @@ static void setup()
 
 static void update()
 {
-  imageDataModule.load_image_index(frame);
+  imageDataModule.load_image_index(_frame);
 
   for (int x = 0; x < imageWidth; x++)
   {
@@ -86,8 +88,12 @@ static void update()
     }
   }
 
-  S2D_SetText(info, "frame = %d", frame);
-  frame++;
+  S2D_SetText(info, "frame = %d", _frame);
+
+  if (!_pause)
+  {
+    _frame++;
+  }
 }
 
 static void render()
@@ -107,6 +113,30 @@ static void render()
   debugging_draw_pixels(0, imageHeight * 3 * scale, imageWidth, imageHeight, pixels_d, scale);
 }
 
+static void on_key(S2D_Event e)
+{
+  if (e.type != S2D_KEY_DOWN)
+  {
+    return;
+  }
+
+  // printf("on_key %s\n", e.key);
+
+  if (strcmp(e.key, "Space") == 0)
+  {
+    _pause = !_pause;
+  }
+
+  if (strcmp(e.key, "Right") == 0)
+  {
+    _frame++;
+  }
+
+  if (strcmp(e.key, "Left") == 0)
+  {
+    _frame--;
+  }
+}
 void debugging_run(char *imageDataFilePath)
 {
   imageDataModule.load_file(imageDataFilePath);
@@ -117,6 +147,7 @@ void debugging_run(char *imageDataFilePath)
 
   S2D_Window *window = S2D_CreateWindow(
       "Hello Triangle", 1280, 800, update, render, 0);
+  window->on_key = on_key;
 
   S2D_Show(window);
 }
