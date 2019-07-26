@@ -23,10 +23,11 @@ A more custom approach is needed running on a constrained environment.
 
 
 
-## Components
+## Modules
 
-- Pixel Analysis
-
+- Pixel Online Learning Module
+  - Learn Pixel Colors Online (during runtime) to adjust to lighting conditions
+  - To ensure stability, use only verified results - strategically using a more expensive algorithm like edge detection to confirm learning results
 
 
 

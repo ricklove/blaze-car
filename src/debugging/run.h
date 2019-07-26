@@ -1,3 +1,3 @@
 #pragma once
 
-void run_debug();
+void debugging_run(char* imageDataFilePath);

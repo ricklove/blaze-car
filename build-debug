@@ -1,6 +1,8 @@
 gcc -g \
 src/main_debug.c \
+src/constants.c \
 src/debugging/run.c \
 src/debugging/draw_pixels.c \
+src/debugging/image_data.c \
 `simple2d --libs` \
 -o run-debug

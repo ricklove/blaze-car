@@ -1,7 +1,7 @@
 #include "draw_pixels.h"
 #include <simple2d.h>
 
-void draw_pixels(int x, int y, int width, int height, unsigned char *pixels_rgba)
+void debugging_draw_pixels(int x, int y, int width, int height, unsigned char *pixels_rgba, int scale)
 {
   static S2D_Image *img;
 
@@ -38,8 +38,8 @@ void draw_pixels(int x, int y, int width, int height, unsigned char *pixels_rgba
   img->color.a = 1.f;
   img->orig_width = img->surface->w;
   img->orig_height = img->surface->h;
-  img->width = img->orig_width;
-  img->height = img->orig_height;
+  img->width = img->orig_width * scale;
+  img->height = img->orig_height * scale;
   img->rotate = 0;
   img->rx = 0;
   img->ry = 0;

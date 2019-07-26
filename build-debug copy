@@ -1,6 +1,0 @@
-gcc -g \ 
-src/main_debug.c \
-src/debugging/run.c \
-src/debugging/draw-pixel.c \
-`simple2d --libs` \
--o run
