@@ -1,7 +1,8 @@
 #pragma once
 
-const int rawWidth;
-const int rawHeight;
-const int rawImageSize;
-const int imageWidth;
-const int imageHeight;
+#define rawWidth 640
+#define rawHeight 200
+#define rawImageSize rawWidth * rawHeight
+#define imageWidth rawWidth / 2
+#define imageHeight rawHeight / 2
+#define yRawMin 40

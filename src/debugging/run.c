@@ -3,7 +3,8 @@
 #include <math.h>
 #include <stdbool.h>
 #include "draw_pixels.h"
-#include "image_data.h"
+#include "../data/image_data.h"
+#include "../pixels/pixel_filters.h"
 
 static void drawLine(float x1, float y1, float x2, float y2, char r_255, char g_255, char b_255)
 {
@@ -24,6 +25,8 @@ static BYTE *pixels_b;
 static BYTE *pixels_c;
 static BYTE *pixels_d;
 
+static BYTE **pixels_filtered;
+
 static void setup()
 {
   info = S2D_CreateText("resources/vera.ttf", "", 11);
@@ -40,6 +43,17 @@ static void setup()
   pixels_b = malloc(sizeof(BYTE) * 4 * imageSize);
   pixels_c = malloc(sizeof(BYTE) * 4 * imageSize);
   pixels_d = malloc(sizeof(BYTE) * 4 * imageSize);
+
+  PixelFilters filters = pixelFiltersModule.getFilters();
+  // A pixel set for each filter * each raw part
+  pixels_filtered = malloc(sizeof(BYTE *) * filters.count * 4);
+  for (int i = 0; i < filters.count; i++)
+  {
+    for (int j = 0; j < 4; j++)
+    {
+      pixels_filtered[i * 4 + j] = malloc(sizeof(BYTE) * 4 * imageSize);
+    }
+  }
 
   for (int x = 0; x < imageWidth; x++)
   {
@@ -64,12 +78,25 @@ static void setup()
       pixels_b[(x + y * imageWidth) * 4 + 3] = 255;
       pixels_c[(x + y * imageWidth) * 4 + 3] = 255;
       pixels_d[(x + y * imageWidth) * 4 + 3] = 255;
+
+      for (int i = 0; i < filters.count; i++)
+      {
+        for (int j = 0; j < 4; j++)
+        {
+          pixels_filtered[i * 4 + j][(x + y * imageWidth) * 4 + 0] = 0;
+          pixels_filtered[i * 4 + j][(x + y * imageWidth) * 4 + 1] = 0;
+          pixels_filtered[i * 4 + j][(x + y * imageWidth) * 4 + 2] = 0;
+          pixels_filtered[i * 4 + j][(x + y * imageWidth) * 4 + 3] = 255;
+        }
+      }
     }
   }
 }
 
 static void update()
 {
+  PixelFilters filters = pixelFiltersModule.getFilters();
+
   imageDataModule.load_image_index(_frame);
 
   for (int x = 0; x < imageWidth; x++)
@@ -85,6 +112,24 @@ static void update()
       pixels_c[(x + y * imageWidth) * 4 + 0] = rawImageData[xRaw + yRaw * rawWidth + rawWidth + 0];
       pixels_c[(x + y * imageWidth) * 4 + 1] = rawImageData[xRaw + yRaw * rawWidth + rawWidth + 0];
       pixels_d[(x + y * imageWidth) * 4 + 2] = rawImageData[xRaw + yRaw * rawWidth + rawWidth + 1];
+
+      for (int i = 0; i < filters.count; i++)
+      {
+        PixelFilter f = filters.items[i];
+        BYTE vals[4];
+        vals[0] = f(rawImageData, xRaw + 0, yRaw + 0);
+        vals[1] = f(rawImageData, xRaw + 1, yRaw + 0);
+        vals[2] = f(rawImageData, xRaw + 0, yRaw + 1);
+        vals[3] = f(rawImageData, xRaw + 1, yRaw + 1);
+
+        for (int j = 0; j < 4; j++)
+        {
+          pixels_filtered[i * 4 + j][(x + y * imageWidth) * 4 + 0] = vals[j];
+          pixels_filtered[i * 4 + j][(x + y * imageWidth) * 4 + 1] = vals[j];
+          pixels_filtered[i * 4 + j][(x + y * imageWidth) * 4 + 2] = vals[j];
+          // pixels_filtered[i * 4 + j][(x + y * imageWidth) * 4 + 3] = 255;
+        }
+      }
     }
   }
 
@@ -106,11 +151,21 @@ static void render()
   // drawLine(fmod(a_x, 640), fmod(a_y, 480), fmod(a_x, 640) + 50, fmod(a_y, 480) + 50, a_r % 255, 255, 255);
   S2D_DrawText(info);
 
-  int scale = 2;
+  int scale = 1;
   debugging_draw_pixels(0, imageHeight * 0 * scale, imageWidth, imageHeight, pixels_a, scale);
   debugging_draw_pixels(0, imageHeight * 1 * scale, imageWidth, imageHeight, pixels_b, scale);
   debugging_draw_pixels(0, imageHeight * 2 * scale, imageWidth, imageHeight, pixels_c, scale);
   debugging_draw_pixels(0, imageHeight * 3 * scale, imageWidth, imageHeight, pixels_d, scale);
+
+  PixelFilters filters = pixelFiltersModule.getFilters();
+
+  for (int i = 0; i < filters.count; i++)
+  {
+    for (int j = 0; j < 4; j++)
+    {
+      debugging_draw_pixels((1 + i) * imageWidth, imageHeight * j * scale, imageWidth, imageHeight, pixels_filtered[i * 4 + j], scale);
+    }
+  }
 }
 
 static void on_key(S2D_Event e)
