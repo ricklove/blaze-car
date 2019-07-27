@@ -17,12 +17,11 @@ int main()
 
   // debugging_run("../blaze-car-data/014-Sun/new/cardata0011.image.data");
   // debugging_run("../blaze-car-data/014-Sun/new/cardata0012.image.data");
-  // debugging_run("../blaze-car-data/014-Sun/new/cardata0013.image.data");
-  // debugging_run("../blaze-car-data/015-Sun-Lens/new/cardata0004.image.data");
-  // debugging_run("../blaze-car-data/015-Sun-Lens/new/cardata0003.image.data");
   // debugging_run("../blaze-car-data/015-Sun-Lens/new/cardata0002.image.data");
+  debugging_run("../blaze-car-data/015-Sun-Lens/new/cardata0003.image.data");
+  // debugging_run("../blaze-car-data/015-Sun-Lens/new/cardata0004.image.data");
 
-  debugging_run("../blaze-car-data/016-Sun-Shadow/new/cardata0008.image.data");
+  // debugging_run("../blaze-car-data/016-Sun-Shadow/new/cardata0008.image.data");
 
 
   return 0;

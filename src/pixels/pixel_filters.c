@@ -91,7 +91,8 @@ static BYTE pixel_histogram_count(BYTE *rawImage, int xRaw, int yRaw)
 #define quantize 256
 
   static bool isFirst = true;
-  static int count[4];
+  static int count_total[4];
+  static int count_used[4];
   static int hist[4][quantize];
 
   if (isFirst)
@@ -99,7 +100,8 @@ static BYTE pixel_histogram_count(BYTE *rawImage, int xRaw, int yRaw)
     isFirst = false;
     for (int i = 0; i < 4; i++)
     {
-      count[i] = 0;
+      count_total[i] = 0;
+      count_used[i] = 0;
       for (int j = 0; j < quantize; j++)
       {
         hist[i][j] = 0;
@@ -120,28 +122,91 @@ static BYTE pixel_histogram_count(BYTE *rawImage, int xRaw, int yRaw)
   int yMod = yRaw % 2;
   int i = xMod + yMod * 2;
 
-  int c = count[i] + 1;
   int h = hist[i][val] + 1;
-  float r = h * quantize * 1.0f / c;
+  int c_used = count_used[i];
+  int c_total = count_total[i] + 1;
 
-  count[i] = c;
-  hist[i][val] = h;
-
-  const int POOL_SIZE = 0x11111;
-  if (count[i] > POOL_SIZE)
+  if (h == 1)
   {
-    count[i] /= 2;
-    for (int j = 0; j < quantize; j++)
-    {
-      // r = h * quantize * 64 / c;
-      // if c=> c/2 and r0 => r1
-      // h * quantize * 64 = c
+    c_used++;
+  }
+  c_total++;
 
-      hist[i][j] /= 2;
+  const int MAX_SIZE = 0x10000000;
+  if (c_total < MAX_SIZE)
+  {
+    count_used[i] = c_used;
+    count_total[i] = c_total;
+    hist[i][val] = h;
+  }
+
+  float avePerBucket = c_total / c_used;
+  float r = h * 16.0f / avePerBucket;
+
+  return clampI(r, 0, 255);
+}
+
+static BYTE pixel_histogram_blur(BYTE *rawImage, int xRaw, int yRaw)
+{
+#define quantize 256
+
+  static bool isFirst = true;
+  static int count_total[4];
+  static int count_used[4];
+  static int hist[4][quantize];
+
+  if (isFirst)
+  {
+    isFirst = false;
+    for (int i = 0; i < 4; i++)
+    {
+      count_total[i] = 0;
+      count_used[i] = 0;
+      for (int j = 0; j < quantize; j++)
+      {
+        hist[i][j] = 0;
+      }
     }
   }
 
-  return clampI(r * r * r, 0, 255);
+  // Skip if out of range or near border
+  if (yRaw < yRawMin || yRaw >= rawHeight - 2 || xRaw >= rawWidth - 2 || xRaw <= 1)
+  {
+    return 255;
+  }
+
+  int val_a = rawImage[xRaw + yRaw * rawWidth] / (256 / quantize);
+  int val_b = rawImage[xRaw + (yRaw + 2) * rawWidth] / (256 / quantize);
+  int val_c = rawImage[xRaw - 2 + yRaw * rawWidth] / (256 / quantize);
+  int val_d = rawImage[xRaw + 2 + yRaw * rawWidth] / (256 / quantize);
+  int val = val_a * 0.5f + (val_b + val_c + val_d) * 0.5f;
+
+  int xMod = xRaw % 2;
+  int yMod = yRaw % 2;
+  int i = xMod + yMod * 2;
+
+  int h = hist[i][val] + 1;
+  int c_used = count_used[i];
+  int c_total = count_total[i] + 1;
+
+  if (h == 1)
+  {
+    c_used++;
+  }
+  c_total++;
+
+  const int MAX_SIZE = 0x10000000;
+  if (c_total < MAX_SIZE)
+  {
+    count_used[i] = c_used;
+    count_total[i] = c_total;
+    hist[i][val] = h;
+  }
+
+  float avePerBucket = c_total / c_used;
+  float r = h * 16.0f / avePerBucket;
+
+  return clampI(r, 0, 255);
 }
 
 static BYTE pixel_histogram_combo(BYTE *rawImage, int xRaw, int yRaw)
@@ -190,14 +255,14 @@ static BYTE pixel_histogram_combo(BYTE *rawImage, int xRaw, int yRaw)
   c_total++;
 
   const int MAX_SIZE = 0x10000000;
-  if (count_total < MAX_SIZE)
+  if (c_total < MAX_SIZE)
   {
     count_used = c_used;
     count_total = c_total;
     hist[val] = h;
   }
 
-  float avePerBucket = count_total / count_used;
+  float avePerBucket = c_total / c_used;
   float r = h * 16.0f / avePerBucket;
 
   return clampI(r, 0, 255);
@@ -215,7 +280,8 @@ PixelFilters getFilters()
     filters.items[0] = diff_ave_mid;
     //filters.items[2] = diff_ave_abs;
     filters.items[1] = pixel_histogram_count;
-    filters.items[2] = pixel_histogram_combo;
+    // filters.items[2] = pixel_histogram_combo;
+    filters.items[2] = pixel_histogram_blur;
   }
 
   return filters;
