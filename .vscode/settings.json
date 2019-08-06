@@ -1,6 +1,0 @@
-{
-  "files.associations": {
-    "*.pyx": "python",
-    "utils.h": "c"
-  }
-}

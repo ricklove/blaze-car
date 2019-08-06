@@ -163,7 +163,14 @@ static void render()
   {
     for (int j = 0; j < 4; j++)
     {
-      debugging_draw_pixels((1 + i) * imageWidth, imageHeight * j * scale, imageWidth, imageHeight, pixels_filtered[i * 4 + j], scale);
+      if (i <= 2)
+      {
+        debugging_draw_pixels((1 + i) * imageWidth, imageHeight * j * scale, imageWidth, imageHeight, pixels_filtered[i * 4 + j], scale);
+      }
+      else
+      {
+        debugging_draw_pixels((-3 + i) * imageWidth, imageHeight * (j + 4) * scale, imageWidth, imageHeight, pixels_filtered[i * 4 + j], scale);
+      }
     }
   }
 }
